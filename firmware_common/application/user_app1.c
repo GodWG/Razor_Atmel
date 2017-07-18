@@ -53,14 +53,21 @@ extern volatile u32 G_u32SystemTime1ms;                /* From board-specific so
 extern volatile u32 G_u32SystemTime1s;                 /* From board-specific source file */
 
 
+
+
+extern u8 G_au8DebugScanfBuffer[];
+ u8 G_au8DebugScanfCharCount; 
+
+
+
 /***********************************************************************************************************************
 Global variable definitions with scope limited to this local application.
 Variable names shall start with "UserApp1_" and be declared as static.
 ***********************************************************************************************************************/
 static fnCode_type UserApp1_StateMachine;            /* The state machine function pointer */
 //static u32 UserApp1_u32Timeout;                      /* Timeout counter used across states */
-
-
+//static u8 UserApp_au8MyName[] = "LCD Example";     
+static u8 UserApp_CursorPosition;
 /**********************************************************************************************************************
 Function Definitions
 **********************************************************************************************************************/
@@ -87,8 +94,9 @@ Promises:
 */
 void UserApp1Initialize(void)
 {
- 
-  /* If good initialization, set state to Idle */
+  PWMAudioOn(BUZZER1);
+
+	/* If good initialization, set state to Idle */
   if( 1 )
   {
     UserApp1_StateMachine = UserApp1SM_Idle;
@@ -135,16 +143,130 @@ State Machine Function Definitions
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Wait for ??? */
 static void UserApp1SM_Idle(void)
-{
+{  	
+		static u8 au8Message[] = "WANG GUAN"; 
+	static u16 u16TimeCounter=0;
+	static u8 *pu8Point=&au8Message[0];
+	static u8 u8Bite=0;
+	static u16 u16Rate=200;
+	u16TimeCounter++;
+	
+	if(WasButtonPressed(BUTTON0))
+	{
+		ButtonAcknowledge(BUTTON0);
+		u16Rate=u16Rate-50;
+	}
+	
+	if(WasButtonPressed(BUTTON1))
+	{
+		ButtonAcknowledge(BUTTON1);
+		u16Rate=u16Rate+50;	
+	}	
+	
+ 	if(u16TimeCounter==u16Rate)
+	{
+	 	switch (UserApp_CursorPosition)		
+		{
+			case 0x12:
+					LedOn(RED);
+					PWMAudioSetFrequency(BUZZER1,100);
+					break;
+				
+			case 0x10:
+					LedOn(ORANGE);
+					PWMAudioSetFrequency(BUZZER1,200);
+					break;
+				
+			case 0x0E:
+					LedOn(YELLOW);
+					PWMAudioSetFrequency(BUZZER1,300);
+					break;
+				
+		    case 0x0C:
+					LedOn(GREEN);
+					PWMAudioSetFrequency(BUZZER1,400);
+					break;
+				
+			case 0x0A:
+					LedOn(CYAN);
+					PWMAudioSetFrequency(BUZZER1,500);
+					break;
+				
+			case 0x08:
+					LedOn(BLUE);
+					PWMAudioSetFrequency(BUZZER1,600);
+					break;
+					
+			case 0x06:
+					LedOn(PURPLE);
+					PWMAudioSetFrequency(BUZZER1,700);
+					break;
+				
+			case 0x04:
+					LedOn(WHITE);
+					PWMAudioSetFrequency(BUZZER1,800);
+					break;
+				
+			case 0x02:
+					LedOff(WHITE);
+					LedOff(RED);
+					LedOff(YELLOW);
+					LedOff(BLUE);
+					LedOff(GREEN);
+					LedOff(CYAN);
+					LedOff(PURPLE);
+					LedOff(ORANGE);
+					PWMAudioSetFrequency(BUZZER1,900);
+					break;
+					
+			default:
+					break;
+		}
+		
+		if(UserApp_CursorPosition == LINE1_START_ADDR)
+		{
+			PWMAudioOff(BUZZER1);	
+		}	
+		
+		PWMAudioOn(BUZZER1);
+    	u16TimeCounter=0;
+    	LCDCommand(LCD_CLEAR_CMD);
+		
+		if(UserApp_CursorPosition == LINE1_START_ADDR)
+		{
+			if(u8Bite<=8)
+			{
+				u8Bite++;		
+				LCDMessage(UserApp_CursorPosition,pu8Point);
+				pu8Point++;
+			}
+			
+			if(u8Bite==9)
+			{
+				u8Bite=0;
+				UserApp_CursorPosition = LINE1_END_ADDR;
+				pu8Point=&au8Message[0];
+			}	
+		}
+		
+		if(UserApp_CursorPosition != LINE1_START_ADDR)
+		{
+			LCDMessage(UserApp_CursorPosition,au8Message);
+			UserApp_CursorPosition--;
+		}
+	}
+	
+}
+/* end UserApp1SM_Idle() */
+  
+ 
 
-} /* end UserApp1SM_Idle() */
-    
 
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Handle an error */
 static void UserApp1SM_Error(void)          
 {
-  
+ 
 } /* end UserApp1SM_Error() */
 
 
