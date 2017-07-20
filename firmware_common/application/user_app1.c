@@ -67,7 +67,7 @@ Variable names shall start with "UserApp1_" and be declared as static.
 static fnCode_type UserApp1_StateMachine;            /* The state machine function pointer */
 //static u32 UserApp1_u32Timeout;                      /* Timeout counter used across states */
 //static u8 UserApp_au8MyName[] = "LCD Example";     
-static u8 UserApp_CursorPosition;
+//static u8 UserApp_CursorPosition;
 /**********************************************************************************************************************
 Function Definitions
 **********************************************************************************************************************/
@@ -94,8 +94,17 @@ Promises:
 */
 void UserApp1Initialize(void)
 {
-  PWMAudioOn(BUZZER1);
-
+	LCDCommand(LCD_CLEAR_CMD);
+	LedOff(RED);
+	LedOff(GREEN);
+	LCDMessage(LINE1_START_ADDR,"0");
+	LCDMessage(LINE1_START_ADDR+3,"0");
+	LCDMessage(LINE1_START_ADDR+6,"0");
+	LCDMessage(LINE1_START_ADDR+8,"0");
+	LCDMessage(LINE1_START_ADDR+11,"0");
+	LCDMessage(LINE1_START_ADDR+13,"0");
+	LCDMessage(LINE1_START_ADDR+16,"0");
+	LCDMessage(LINE1_START_ADDR+18,"0");
 	/* If good initialization, set state to Idle */
   if( 1 )
   {
@@ -144,118 +153,92 @@ State Machine Function Definitions
 /* Wait for ??? */
 static void UserApp1SM_Idle(void)
 {  	
-		static u8 au8Message[] = "WANG GUAN"; 
-	static u16 u16TimeCounter=0;
-	static u8 *pu8Point=&au8Message[0];
-	static u8 u8Bite=0;
-	static u16 u16Rate=200;
-	u16TimeCounter++;
-	
-	if(WasButtonPressed(BUTTON0))
+	LedCommandType aeDemoList[]=
 	{
-		ButtonAcknowledge(BUTTON0);
-		u16Rate=u16Rate-50;
-	}
+		{RED,1000,TRUE,LED_PWM_50},
+		{RED,5000,FALSE,LED_PWM_0},
+		{GREEN,3000,TRUE,LED_PWM_50},
+		{GREEN,7000,FALSE,LED_PWM_0},
+		{BLUE,2000,TRUE,LED_PWM_50},
+		{BLUE,6000,FALSE,LED_PWM_0},
+		{CYAN,4000,TRUE,LED_PWM_50},
+		{CYAN,8000,FALSE,LED_PWM_0}
+		
+	};
+	static u16 u16TimeCount=0;
+	static u8 u8Number=0;
+	static u16 au16Time[4];
+	static u8 au8Char[4];
+	static u8 au8Time[]="Time:";
 	
-	if(WasButtonPressed(BUTTON1))
+	u16TimeCount++;
+	
+	if(u16TimeCount==10000)
 	{
-		ButtonAcknowledge(BUTTON1);
-		u16Rate=u16Rate+50;	
+		u16TimeCount=0;
 	}	
 	
- 	if(u16TimeCounter==u16Rate)
+	for(u8Number=0;u8Number<8;u8Number++)
 	{
-	 	switch (UserApp_CursorPosition)		
+		if(u16TimeCount==aeDemoList[u8Number].u32Time)
 		{
-			case 0x12:
-					LedOn(RED);
-					PWMAudioSetFrequency(BUZZER1,100);
-					break;
-				
-			case 0x10:
-					LedOn(ORANGE);
-					PWMAudioSetFrequency(BUZZER1,200);
-					break;
-				
-			case 0x0E:
-					LedOn(YELLOW);
-					PWMAudioSetFrequency(BUZZER1,300);
-					break;
-				
-		    case 0x0C:
-					LedOn(GREEN);
-					PWMAudioSetFrequency(BUZZER1,400);
-					break;
-				
-			case 0x0A:
-					LedOn(CYAN);
-					PWMAudioSetFrequency(BUZZER1,500);
-					break;
-				
-			case 0x08:
-					LedOn(BLUE);
-					PWMAudioSetFrequency(BUZZER1,600);
-					break;
-					
-			case 0x06:
-					LedOn(PURPLE);
-					PWMAudioSetFrequency(BUZZER1,700);
-					break;
-				
-			case 0x04:
-					LedOn(WHITE);
-					PWMAudioSetFrequency(BUZZER1,800);
-					break;
-				
-			case 0x02:
-					LedOff(WHITE);
-					LedOff(RED);
-					LedOff(YELLOW);
-					LedOff(BLUE);
-					LedOff(GREEN);
-					LedOff(CYAN);
-					LedOff(PURPLE);
-					LedOff(ORANGE);
-					PWMAudioSetFrequency(BUZZER1,900);
-					break;
-					
-			default:
-					break;
-		}
-		
-		if(UserApp_CursorPosition == LINE1_START_ADDR)
-		{
-			PWMAudioOff(BUZZER1);	
+			LedPWM(aeDemoList[u8Number].eLED,aeDemoList[u8Number].eCurrentRate);
 		}	
 		
-		PWMAudioOn(BUZZER1);
-    	u16TimeCounter=0;
-    	LCDCommand(LCD_CLEAR_CMD);
-		
-		if(UserApp_CursorPosition == LINE1_START_ADDR)
-		{
-			if(u8Bite<=8)
-			{
-				u8Bite++;		
-				LCDMessage(UserApp_CursorPosition,pu8Point);
-				pu8Point++;
-			}
-			
-			if(u8Bite==9)
-			{
-				u8Bite=0;
-				UserApp_CursorPosition = LINE1_END_ADDR;
-				pu8Point=&au8Message[0];
-			}	
-		}
-		
-		if(UserApp_CursorPosition != LINE1_START_ADDR)
-		{
-			LCDMessage(UserApp_CursorPosition,au8Message);
-			UserApp_CursorPosition--;
-		}
-	}
+	}	
 	
+	if(u16TimeCount%500==0)
+	{
+		LCDClearChars(LINE2_START_ADDR,19);
+		au16Time[0]=u16TimeCount/1000;
+		au16Time[1]=(u16TimeCount%1000)/100;
+		au16Time[2]=((u16TimeCount%1000)%100)/10;
+		au16Time[3]=((u16TimeCount%1000)%100)%10;
+		au8Char[0]=au16Time[0]+'0';
+		au8Char[1]=au16Time[1]+'0';
+		au8Char[2]=au16Time[2]+'0';
+		au8Char[3]=au16Time[3]+'0';
+		LCDMessage(LINE2_START_ADDR,au8Time);
+		LCDMessage(LINE2_START_ADDR+5,au8Char);
+	}	
+	
+	switch (u16TimeCount)
+	{
+		case 1000:
+			LCDMessage(LINE1_START_ADDR+18,"1");
+			break;
+			
+		case 2000:
+			LCDMessage(LINE1_START_ADDR+6,"1");
+			break;
+			
+		case 3000:
+			LCDMessage(LINE1_START_ADDR+11,"1");
+			break;
+			
+		case 4000:
+			LCDMessage(LINE1_START_ADDR+8,"1");
+			break;
+			
+		case 5000:
+			LCDMessage(LINE1_START_ADDR+18,"0");
+			break;
+			
+		case 6000:
+			LCDMessage(LINE1_START_ADDR+6,"0");
+			break;
+			
+		case 7000:
+			LCDMessage(LINE1_START_ADDR+11,"0");
+			break;
+			
+		case 8000:
+			LCDMessage(LINE1_START_ADDR+8,"0");
+			break;
+			
+		default: 
+			break;
+	}	
 }
 /* end UserApp1SM_Idle() */
   
