@@ -136,7 +136,50 @@ State Machine Function Definitions
 /* Wait for ??? */
 static void UserApp1SM_Idle(void)
 {
-
+	static u8 u8Counter=0;
+    static u8 u8Index1=0;
+    static u8 u8Index2=20;
+    static bool bupOK=TRUE;
+    static u8 au8LED_PWM[21]={LED_PWM_0, LED_PWM_5, LED_PWM_10, LED_PWM_15, LED_PWM_20, 
+                          LED_PWM_25, LED_PWM_30, LED_PWM_35, LED_PWM_40, LED_PWM_45, 
+                          LED_PWM_50, LED_PWM_55, LED_PWM_60, LED_PWM_65, LED_PWM_70, 
+                          LED_PWM_75, LED_PWM_80, LED_PWM_85, LED_PWM_90, LED_PWM_95, 
+                          LED_PWM_100 };
+    
+    u8Counter++;
+    
+    if(u8Counter==40)
+    {
+        u8Counter=0;
+        
+        if(bupOK)//PWM up
+        {
+			LedPWM(RED,au8LED_PWM[u8Index1]);
+			LedPWM(YELLOW,au8LED_PWM[u8Index1]);
+			u8Index1++;
+			LedPWM(ORANGE,au8LED_PWM[u8Index2]);
+			LedPWM(GREEN,au8LED_PWM[u8Index2]);
+			u8Index2--;
+			if(u8Index1==20)//when PWM=100,change bupOK
+			{
+			   bupOK=!bupOK;
+			}
+		}
+        else//PWM down
+        {
+			LedPWM(RED,au8LED_PWM[u8Index1]);
+			LedPWM(YELLOW,au8LED_PWM[u8Index1]);
+			u8Index1--;
+			LedPWM(ORANGE,au8LED_PWM[u8Index2]);
+			LedPWM(GREEN,au8LED_PWM[u8Index2]);
+			u8Index2++;
+			
+			if(u8Index1==0)//when PWM=0,change bupOK
+			{
+			   bupOK=!bupOK; 
+			}
+       	}
+    }
 } /* end UserApp1SM_Idle() */
     
 
