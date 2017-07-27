@@ -87,7 +87,11 @@ Promises:
 */
 void UserApp1Initialize(void)
 {
- 
+ 	LedOff(RED);
+	LedOff(GREEN);
+	LedOff(BLUE);
+	LedOff(YELLOW);
+
   /* If good initialization, set state to Idle */
   if( 1 )
   {
@@ -136,6 +140,171 @@ State Machine Function Definitions
 /* Wait for ??? */
 static void UserApp1SM_Idle(void)
 {
+	static u8 u8RealPassword[]={1,1,2,1,1,3};
+	static u8 u8UserPassword[]={0,0,0,0,0,0};
+	static u8 u8Index=0;
+	static u8 u8Confirm=0;
+	static u16 u16Counter=0;
+	static bool bPressed=FALSE;
+	static bool bIsOk=TRUE;
+	static u8 au8Buffer[1];
+	static bool bHeld=FALSE;
+	u8 u8TempIndex=0;
+	
+	if(WasButtonPressed(BUTTON3))
+	{
+		ButtonAcknowledge(BUTTON3);
+		
+		
+		u8Confirm++;
+	}
+	
+	if(IsButtonHeld(BUTTON0,2000))//when BUTTON0 is pressed,change the password 
+	{	
+		bHeld=TRUE;
+		LedOff(BLUE);
+		LedBlink(RED,LED_2HZ);
+		LedBlink(GREEN,LED_2HZ);
+	}	
+	
+	if(bHeld)
+	{
+		DebugScanf(au8Buffer);
+		switch(au8Buffer[0])//input the password
+		{
+			case '1':
+				LedOn(YELLOW);
+				bPressed=TRUE;
+				u8RealPassword[u8Index]=1;
+				u8Index++;
+				break;
+				
+			case '2':
+				LedOn(YELLOW);
+				bPressed=TRUE;
+				u8RealPassword[u8Index]=2;
+				u8Index++;
+				break;
+				
+			case '3':
+				LedOn(YELLOW);
+				bPressed=TRUE;
+				u8RealPassword[u8Index]=3;
+				u8Index++;
+				break;
+				
+			default:
+				break;
+		}
+		au8Buffer[0]=0;
+		
+		if(bPressed==TRUE)
+		{
+			u16Counter++;
+			if(u16Counter==100)
+			{
+				u16Counter=0;
+				LedOff(YELLOW);
+				bPressed=FALSE;
+				if(u8Index==6)
+				{
+					bHeld=FALSE;
+					u8Index=0;
+					LedOff(RED);
+					LedOff(GREEN);
+				}
+			}
+		}	
+	}	
+	
+	if(u8Confirm==2)//confirm the number you enter
+	{
+		for(u8TempIndex=0;u8TempIndex<6;u8TempIndex++)
+		{
+			if(u8RealPassword[u8TempIndex]!=u8UserPassword[u8TempIndex])
+			{
+				bIsOk=FALSE;
+				break;
+			}
+		}
+		
+		if(bIsOk)
+		{
+			LedBlink(GREEN,LED_1HZ);//the password is right
+			LedOff(RED);
+		}
+		else
+		{
+			LedOff(GREEN);
+			LedBlink(RED,LED_1HZ);//the password is wrong
+			bIsOk=TRUE;
+		}
+		u8Confirm=0;
+		LedOff(BLUE);
+		
+		for(u8Index=0;u8Index<6;u8Index++)
+		{
+			 u8UserPassword[u8Index]=0;	  
+		}  
+		u8Index=0;
+	}
+	
+	if(u8Confirm==1)//enter password
+	{
+		LedOn(BLUE);
+		LedOff(GREEN);
+		LedOff(RED);
+		
+		if(u8Index<6)
+		{
+			if(WasButtonPressed(BUTTON0))
+			{
+				ButtonAcknowledge(BUTTON0);
+				LedOn(YELLOW);
+				PWMAudioOn(BUZZER1);
+				bPressed=TRUE;
+				u8UserPassword[u8Index]=1;
+				u8Index++;
+			}
+		
+			if(WasButtonPressed(BUTTON1))
+			{
+				ButtonAcknowledge(BUTTON1);
+				LedOn(YELLOW);
+				PWMAudioOn(BUZZER1);
+				bPressed=TRUE;
+				u8UserPassword[u8Index]=2;
+				u8Index++;
+			}
+		
+			if(WasButtonPressed(BUTTON2))
+			{
+				ButtonAcknowledge(BUTTON2);
+				LedOn(YELLOW);
+				PWMAudioOn(BUZZER1);
+				bPressed=TRUE;
+				u8UserPassword[u8Index]=3;
+				u8Index++;
+			}
+		}	
+			
+		if(bPressed==TRUE)//set RED blink 0.1s when BUTTON0-2 is pressed
+		{
+			u16Counter++;
+
+			if(u16Counter==100)
+			{
+				u16Counter=0;
+				LedOff(YELLOW);
+				bPressed=FALSE;
+			}
+		}			
+	}
+	
+	ButtonAcknowledge(BUTTON0);
+	ButtonAcknowledge(BUTTON1);
+	ButtonAcknowledge(BUTTON2);
+	ButtonAcknowledge(BUTTON3);
 
 } /* end UserApp1SM_Idle() */
     
