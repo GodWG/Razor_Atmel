@@ -72,7 +72,18 @@ Function Definitions
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* Protected functions                                                                                                */
 /*--------------------------------------------------------------------------------------------------------------------*/
-
+static u8 AntCalculateChecksum(u8 *pu8Message,u8 u8length)
+{
+	u8 i=0;
+	u8 u8CheakSum=0;
+	
+	for(i=0;i<=u8length-2;i++)
+	{
+		u8CheakSum^=*pu8Message;
+		pu8Message++;
+	}	
+	return u8CheakSum;
+}
 /*--------------------------------------------------------------------------------------------------------------------
 Function: UserApp1Initialize
 
@@ -87,7 +98,15 @@ Promises:
 */
 void UserApp1Initialize(void)
 {
- 
+	u8 au8SetChannelPower[] = {0xA5,2,0x47,0,4,CS};
+	u8 au8SetChannelID[] = {0XA4,5,0x51,1,0xef,0x12,1,50,CS};
+	
+	u8 au8SetChannelPowerCS;
+	u8 au8SetChannelIDCS;
+	
+	au8SetChannelPowerCS = AntCalculateChecksum(au8SetChannelPower,sizeof(au8SetChannelPower)/sizeof(au8SetChannelPower[0]));
+	
+	au8SetChannelIDCS = AntCalculateChecksum(au8SetChannelID,sizeof(au8SetChannelID)/sizeof(au8SetChannelID[0]));
   /* If good initialization, set state to Idle */
   if( 1 )
   {
