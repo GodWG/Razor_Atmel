@@ -52,6 +52,8 @@ extern volatile u32 G_u32ApplicationFlags;             /* From main.c */
 extern volatile u32 G_u32SystemTime1ms;                /* From board-specific source file */
 extern volatile u32 G_u32SystemTime1s;                 /* From board-specific source file */
 
+extern u8 G_au8DebugScanfBuffer[];                     /* From debug.c*/
+extern u8 G_u8DebugScanfCharCount;                     /* From debug.c*/
 
 /***********************************************************************************************************************
 Global variable definitions with scope limited to this local application.
@@ -60,10 +62,69 @@ Variable names shall start with "UserApp1_" and be declared as static.
 static fnCode_type UserApp1_StateMachine;            /* The state machine function pointer */
 //static u32 UserApp1_u32Timeout;                      /* Timeout counter used across states */
 
-
+void UserAppSM_State2(void);
+void AllLedOff(void);
+void UserAppSM_State1(void);
 /**********************************************************************************************************************
 Function Definitions
 **********************************************************************************************************************/
+
+void AllLedOff(void)/* Turn off all of leds */
+{
+	LedOff(WHITE);
+	LedOff(PURPLE);
+	LedOff(BLUE);
+	LedOff(CYAN);
+	LedOff(GREEN);
+	LedOff(YELLOW);
+	LedOff(ORANGE);
+	LedOff(RED);
+	LedOff(LCD_RED);
+	LedOff(LCD_GREEN);
+	LedOff(LCD_BLUE);
+}
+
+void UserAppSM_State1(void)
+{
+	u8 au8LCD[]="STATE 1";
+	
+	//clear all settings
+	AllLedOff();
+	LCDCommand(LCD_CLEAR_CMD);
+	//code for button1
+	DebugPrintf("Entering state 1");
+	DebugLineFeed();
+	LedOn(WHITE);
+	LedOn(PURPLE);
+	LedOn(BLUE);
+	LedOn(CYAN);
+	LedOn(LCD_RED);
+	LedOn(LCD_BLUE);
+	LCDMessage(LINE1_START_ADDR,au8LCD);
+	
+	UserApp1_StateMachine = UserApp1SM_Idle;
+}
+
+void UserAppSM_State2(void)
+{
+	static u8 au8LCD[]="STATE 2";
+	
+	//clear all settings
+	AllLedOff();
+	LCDCommand(LCD_CLEAR_CMD);
+	//code for button2
+	LedBlink(GREEN, LED_1HZ);
+	LedBlink(YELLOW, LED_2HZ);
+	LedBlink(ORANGE, LED_4HZ);
+	LedBlink(RED, LED_8HZ);
+	DebugPrintf("Entering state 2");
+	DebugLineFeed();
+	LCDMessage(LINE2_START_ADDR,au8LCD);
+	LedPWM(LCD_RED,LED_PWM_100);
+	LedPWM(LCD_GREEN,LED_PWM_20);
+	
+	UserApp1_StateMachine = UserApp1SM_Idle;
+}
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* Public functions                                                                                                   */
@@ -87,7 +148,8 @@ Promises:
 */
 void UserApp1Initialize(void)
 {
- 
+  LCDCommand(LCD_CLEAR_CMD);
+  
   /* If good initialization, set state to Idle */
   if( 1 )
   {
@@ -118,7 +180,8 @@ Promises:
 */
 void UserApp1RunActiveState(void)
 {
-  UserApp1_StateMachine();
+  	PWMAudioSetFrequency(BUZZER1,200);//set the frequency of the BUZZER1
+	UserApp1_StateMachine();
 
 } /* end UserApp1RunActiveState */
 
@@ -136,7 +199,67 @@ State Machine Function Definitions
 /* Wait for ??? */
 static void UserApp1SM_Idle(void)
 {
-
+	static u16 u16TimeCounter=0;
+	static bool BuzzerIsOk=FALSE;
+	static u8 u8StateChange=0;
+	static u8 au8Entering[2];
+	static u8 au8ClearBuffer[2];//set a array to clear the G_au8DebugScanfBuffer[]
+	
+	for(u8 i=0;i<=1;i++)
+	{
+		au8Entering[i]=G_au8DebugScanfBuffer[i];
+	}//copy from G_au8DebugScanfBuffer[]
+	
+	if(au8Entering[0]=='1'&&au8Entering[1]=='\r')
+	{
+		u8StateChange=1;
+		DebugScanf(au8ClearBuffer);
+		DebugLineFeed();
+	}	
+	
+	if(au8Entering[0]=='2'&&au8Entering[1]=='\r')
+	{
+		u8StateChange=2;
+		DebugScanf(au8ClearBuffer);
+		DebugLineFeed();
+	}
+	
+	if(WasButtonPressed(BUTTON1)||u8StateChange==1)//change to state1 when BUTTON1 was pressed
+	{
+		ButtonAcknowledge(BUTTON1);
+		PWMAudioOff(BUZZER1);
+		BuzzerIsOk=FALSE;
+		u16TimeCounter=0;
+		u8StateChange=0;
+		UserApp1_StateMachine = UserAppSM_State1;
+	}
+	
+	if(WasButtonPressed(BUTTON2)||u8StateChange==2)//change to state2 when BUTTON2 was pressed
+	{
+		ButtonAcknowledge(BUTTON2);
+		BuzzerIsOk=TRUE;
+		u8StateChange=0;
+		UserApp1_StateMachine = UserAppSM_State2;
+	}
+	
+	if(BuzzerIsOk)
+	{
+		u16TimeCounter++;
+		
+		if(u16TimeCounter<=100)
+		{
+			PWMAudioOn(BUZZER1);
+		}
+		else
+	    {
+			PWMAudioOff(BUZZER1);
+			
+			if(u16TimeCounter==1000)
+			{
+				u16TimeCounter=0;
+			}	
+		}//100ms 200HZ tone every second
+	}
 } /* end UserApp1SM_Idle() */
     
 
