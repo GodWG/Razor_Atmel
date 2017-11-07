@@ -202,43 +202,45 @@ static void UserApp1SM_Idle(void)
   static u8 au8TestMessage[] = {0x5B, 0, 0, 0, 0xFF, 0, 0, 0};
   u8 au8DataContent[] = "xxxxxxxxxxxxxxxx";
   u8 u8CurrentEventCodeExample;
+  u8 au8FailMessage[];
+  u8 au8TotalMessage[];
   
   if( AntReadAppMessageBuffer() )
   {
     u8CurrentEventCodeExample = G_au8AntApiCurrentMessageBytes
-                                    [ANT_TICK_MSG_EVENT_CODE_INDEX];
-
-      /* New message from ANT task: check what it is */
-    if(u8CurrentEventCodeExample == EVENT_RX_FAIL)//无应答0x02
-    {
-      au8TestMessage[3]++;
-      if(au8TestMessage[3] == 0)
-      {
-        au8TestMessage[2]++;
-        if(au8TestMessage[2] == 0)
+                                    [ANT_TICK_MSG_EVENT_CODE_INDEX];    
+          
+    if(G_eAntApiCurrentMessageClass == ANT_TICK)
+    {   
+         AntQueueAcknowledgedMessage(ANT_CHANNEL_USERAPP, au8TestMessage); 
+         
+        /* New message from ANT task: check what it is */
+        if(u8CurrentEventCodeExample != EVENT_TRANSFER_TX_COMPLETED)//无应答0x02
         {
-          au8TestMessage[1]++;
+          au8TestMessage[3]++;
+          if(au8TestMessage[3] == 0)
+          {
+            au8TestMessage[2]++;
+            if(au8TestMessage[2] == 0)
+            {
+              au8TestMessage[1]++;
+            }
+          }
         }
-      }
-      //LCDMessage(LINE2_START_ADDR, au8DataContent);
-    }
-    
-    else if(u8CurrentEventCodeExample == EVENT_TRANSFER_TX_COMPLETED)//有应答
-    {
-     /* Update and queue the new message data */
-      au8TestMessage[7]++;
-      if(au8TestMessage[7] == 0)
-      {
-        au8TestMessage[6]++;
-        if(au8TestMessage[6] == 0)
-        {
-          au8TestMessage[5]++;
-        }
-      }
-      AntQueueAcknowledgedMessage(ANT_CHANNEL_USERAPP, au8TestMessage);
-    }
-  } /* end AntReadData() */
-  
+           
+         /* Update and queue the new message data */
+          au8TestMessage[7]++;
+          if(au8TestMessage[7] == 0)
+          {
+            au8TestMessage[6]++;
+            if(au8TestMessage[6] == 0)
+            {
+              au8TestMessage[5]++;
+            }
+          }
+          
+    } 
+  }
 } /* end UserApp1SM_Idle() */
 
 
