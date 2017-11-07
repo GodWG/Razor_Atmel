@@ -95,14 +95,15 @@ Promises:
 */
 void UserApp1Initialize(void)
 {
-  u8 au8WelcomeMessage[] = "ANT Master";
-
+  u8 au8TotalMessage[] = "TOTAL";
+  u8 au8FailedMessage[] = "FAILED";
   /* Write a weclome message on the LCD */
 #if EIE1
   /* Set a message up on the LCD. Delay is required to let the clear command send. */
   LCDCommand(LCD_CLEAR_CMD);
   for(u32 i = 0; i < 10000; i++);
-  LCDMessage(LINE1_START_ADDR, au8WelcomeMessage);
+  LCDMessage(LINE1_START_ADDR, au8TotalMessage);
+  LCDMessage(LINE1_START_ADDR + 12, au8FailedMessage);
 #endif /* EIE1 */
   
 #if 0 // untested for MPG2
@@ -198,57 +199,31 @@ static void UserApp1SM_AntChannelAssign()
 /* Wait for ??? */
 static void UserApp1SM_Idle(void)
 {
-  static u8 au8TestMessage[] = {0, 0, 0, 0, 0xA5, 0, 0, 0};
+  static u8 au8TestMessage[] = {0x5B, 0, 0, 0, 0xFF, 0, 0, 0};
   u8 au8DataContent[] = "xxxxxxxxxxxxxxxx";
-  
-  /* Check all the buttons and update au8TestMessage according to the button state */ 
-  au8TestMessage[0] = 0x00;
-  if( IsButtonPressed(BUTTON0) )
-  {
-    au8TestMessage[0] = 0xff;
-  }
-  
-  au8TestMessage[1] = 0x00;
-  if( IsButtonPressed(BUTTON1) )
-  {
-    au8TestMessage[1] = 0xff;
-  }
-
-#ifdef EIE1
-  au8TestMessage[2] = 0x00;
-  if( IsButtonPressed(BUTTON2) )
-  {
-    au8TestMessage[2] = 0xff;
-  }
-
-  au8TestMessage[3] = 0x00;
-  if( IsButtonPressed(BUTTON3) )
-  {
-    au8TestMessage[3] = 0xff;
-  }
-#endif /* EIE1 */
+  u8 u8CurrentEventCodeExample;
   
   if( AntReadAppMessageBuffer() )
   {
-     /* New message from ANT task: check what it is */
-    if(G_eAntApiCurrentMessageClass == ANT_DATA)
-    {
-      /* We got some data: parse it into au8DataContent[] */
-      for(u8 i = 0; i < ANT_DATA_BYTES; i++)
-      {
-        au8DataContent[2 * i]     = HexToASCIICharUpper(G_au8AntApiCurrentMessageBytes[i] / 16);
-        au8DataContent[2 * i + 1] = HexToASCIICharUpper(G_au8AntApiCurrentMessageBytes[i] % 16);
-      }
+    u8CurrentEventCodeExample = G_au8AntApiCurrentMessageBytes
+                                    [ANT_TICK_MSG_EVENT_CODE_INDEX];
 
-#ifdef EIE1
-      LCDMessage(LINE2_START_ADDR, au8DataContent);
-#endif /* EIE1 */
-      
-#ifdef MPG2
-#endif /* MPG2 */
-      
+      /* New message from ANT task: check what it is */
+    if(u8CurrentEventCodeExample == EVENT_RX_FAIL)//无应答0x02
+    {
+      au8TestMessage[3]++;
+      if(au8TestMessage[3] == 0)
+      {
+        au8TestMessage[2]++;
+        if(au8TestMessage[2] == 0)
+        {
+          au8TestMessage[1]++;
+        }
+      }
+      //LCDMessage(LINE2_START_ADDR, au8DataContent);
     }
-    else if(G_eAntApiCurrentMessageClass == ANT_TICK)
+    
+    else if(u8CurrentEventCodeExample == EVENT_TRANSFER_TX_COMPLETED)//有应答
     {
      /* Update and queue the new message data */
       au8TestMessage[7]++;
@@ -260,7 +235,7 @@ static void UserApp1SM_Idle(void)
           au8TestMessage[5]++;
         }
       }
-      AntQueueBroadcastMessage(ANT_CHANNEL_USERAPP, au8TestMessage);
+      AntQueueAcknowledgedMessage(ANT_CHANNEL_USERAPP, au8TestMessage);
     }
   } /* end AntReadData() */
   
