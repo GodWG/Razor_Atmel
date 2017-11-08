@@ -104,6 +104,7 @@ void UserApp1Initialize(void)
   for(u32 i = 0; i < 10000; i++);
   LCDMessage(LINE1_START_ADDR, au8TotalMessage);
   LCDMessage(LINE1_START_ADDR + 12, au8FailedMessage);
+  
 #endif /* EIE1 */
   
 #if 0 // untested for MPG2
@@ -200,7 +201,7 @@ static void UserApp1SM_AntChannelAssign()
 static void UserApp1SM_Idle(void)
 {
   static u8 au8TestMessage[] = {0x5B, 0, 0, 0, 0xFF, 0, 0, 0};
-  u8 au8DataContent[] = "xxxxxxxxxxxxxxxx";
+  //u8 au8DataContent[] = "xxxxxxxxxxxxxxxx";
   u8 u8CurrentEventCodeExample;
   u8 au8FailMessage[6];
   u8 au8TotalMessage[6];
@@ -209,56 +210,64 @@ static void UserApp1SM_Idle(void)
   {
     u8CurrentEventCodeExample = G_au8AntApiCurrentMessageBytes
                                    [ANT_TICK_MSG_EVENT_CODE_INDEX];    
+    
+    /* New message from ANT task: check what it is */
+    if(G_eAntApiCurrentMessageClass == ANT_TICK)
+    {   
+       AntQueueAcknowledgedMessage(ANT_CHANNEL_USERAPP, au8TestMessage);
      
-     if( AntReadAppMessageBuffer() )
-     {
+       
         /* New message from ANT task: check what it is */
-        if(G_eAntApiCurrentMessageClass == ANT_DATA)
+        if(u8CurrentEventCodeExample != EVENT_TRANSFER_TX_COMPLETED)//no response
         {
-            /* We got some data: parse it into au8DataContent[] */
-            for(u8 i = 0; i < ANT_DATA_BYTES; i++)
+            LedBlink(RED,LED_4HZ);
+            LedOff(GREEN);
+            au8TestMessage[3]++;
+            if(au8TestMessage[3] == 0)
             {
-                au8DataContent[2 * i]     = HexToASCIICharUpper(G_au8AntApiCurrentMessageBytes[i] / 16);
-                au8DataContent[2 * i + 1] = HexToASCIICharUpper(G_au8AntApiCurrentMessageBytes[i] % 16);
+                au8TestMessage[2]++;
+                if(au8TestMessage[2] == 0)
+                {
+                    au8TestMessage[1]++;
+                }         
+            }
+            for(u8 u8j=1;u8j<=3;u8j++)
+            {
+                au8FailMessage[2*u8j-2] = HexToASCIICharUpper(au8TestMessage[u8j] / 16);
+                au8FailMessage[2*u8j-1] = HexToASCIICharUpper(au8TestMessage[u8j] % 16);
+            }
+            /*display the fail number*/
+            LCDMessage(LINE2_START_ADDR+12, au8FailMessage);            
+        }
+        
+        if(u8CurrentEventCodeExample == EVENT_TRANSFER_TX_COMPLETED)
+        {
+            LedOff(RED);
+            LedOn(GREEN);
+        }
+        
+        /* Update and queue the new message data */
+        au8TestMessage[7]++;
+        if(au8TestMessage[7] == 0)
+        {
+            au8TestMessage[6]++;
+            if(au8TestMessage[6] == 0)
+            {
+                au8TestMessage[5]++;
             }
         }
-        if(G_eAntApiCurrentMessageClass == ANT_TICK)
-        {   
-            AntQueueAcknowledgedMessage(ANT_CHANNEL_USERAPP, au8TestMessage); 
-         
-            /* New message from ANT task: check what it is */
-            if(u8CurrentEventCodeExample != EVENT_TRANSFER_TX_COMPLETED)//ÎÞÓ¦´ð0x02
-            {
-                au8TestMessage[3]++;
-                if(au8TestMessage[3] == 0)
-                {
-                    au8TestMessage[2]++;
-                    if(au8TestMessage[2] == 0)
-                    {
-                        au8TestMessage[1]++;
-                    }         
-                }
-                for(u8 u8j=0;u8j<;u8j++)
-                {
-                    au8FailMessage[]   = HexToASCIICharUpper(au8DataContent[] / 16);
-                    au8FailMessage[] = HexToASCIICharUpper(au8DataContent[] % 16);
-                }               
-            }
-                /* Update and queue the new message data */
-            au8TestMessage[7]++;
-            if(au8TestMessage[7] == 0)
-            {
-                au8TestMessage[6]++;
-                if(au8TestMessage[6] == 0)
-                {
-                    au8TestMessage[5]++;
-                }
-            }                
+        
+       for(u8 u8I=1;u8I<=3;u8I++)
+        {
+            au8TotalMessage[2*u8I-10] = HexToASCIICharUpper(au8TestMessage[u8I] / 16);
+            au8TotalMessage[2*u8I-9] = HexToASCIICharUpper(au8TestMessage[u8I] % 16);
         }
-    }
+        /*display the total number*/
+        LCDMessage(LINE2_START_ADDR, au8TotalMessage); 
+              
+    }   
   }
 } /* end UserApp1SM_Idle() */
-
 
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Handle an error (for now, do nothing) */
