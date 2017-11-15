@@ -79,7 +79,14 @@ void main(void)
   /* Exit initialization */
   SystemStatusReport();
   G_u32SystemFlags &= ~_SYSTEM_INITIALIZING;
-    
+  
+  AT91C_BASE_PIOA->PIO_OER  = 0x00000400£»//PA11 output
+  AT91C_BASE_PIOB->PIO_OER  = 0x00000008£»//PB3 output    
+  AT91C_BASE_PIOB->PIO_IFER = 0x00004000£»//PA15 input      
+      
+  AT91C_BASE_PIOB->PIO_PER  = 0x00000400£»//enable  
+  AT91C_BASE_PIOA->PIO_SODR = 0x00000400£»//output high  
+      
   /* Super loop */  
   while(1)
   {
