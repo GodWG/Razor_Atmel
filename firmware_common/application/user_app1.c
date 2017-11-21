@@ -87,7 +87,6 @@ Promises:
 */
 void UserApp1Initialize(void)
 {
- 
   /* If good initialization, set state to Idle */
   if( 1 )
   {
@@ -136,7 +135,14 @@ State Machine Function Definitions
 /* Wait for ??? */
 static void UserApp1SM_Idle(void)
 {
-
+    if(AT91C_BASE_PIOA->PIO_PDSR * PA_17_BUTTON0)
+    {
+        AT91C_BASE_PIOB->PIO_SODR = PB_20_LED_RED;
+    }    
+    else
+    {
+        AT91C_BASE_PIOB->PIO_CODR = PB_20_LED_RED;
+    }    
 } /* end UserApp1SM_Idle() */
     
 
