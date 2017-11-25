@@ -86,8 +86,9 @@ Promises:
   - 
 */
 void UserApp1Initialize(void)
-{
-  /* If good initialization, set state to Idle */
+{  
+  AT91C_BASE_PIOA->PIO_PER = PA_28_BUZZER1;
+    /* If good initialization, set state to Idle */
   if( 1 )
   {
     UserApp1_StateMachine = UserApp1SM_Idle;
@@ -135,13 +136,63 @@ State Machine Function Definitions
 /* Wait for ??? */
 static void UserApp1SM_Idle(void)
 {
-    if(AT91C_BASE_PIOA->PIO_PDSR * PA_17_BUTTON0)
+    static bool bBuzzerOn = FALSE;
+    static u8 u8BuzzerFrequency = 0;
+    
+    if(AT91C_BASE_PIOA->PIO_PDSR & PA_17_BUTTON0)
     {
-        AT91C_BASE_PIOB->PIO_SODR = PB_20_LED_RED;
+       AT91C_BASE_PIOB->PIO_CODR = PB_20_LED_RED;  /*turn off LED red*/
+       AT91C_BASE_PIOB->PIO_SODR = PB_19_LED_GRN;
     }    
     else
     {
-        AT91C_BASE_PIOB->PIO_CODR = PB_20_LED_RED;
+       AT91C_BASE_PIOB->PIO_SODR = PB_20_LED_RED;    /*turn on LED red*/
+       AT91C_BASE_PIOB->PIO_CODR = PB_19_LED_GRN;
+    }  
+    
+    if(AT91C_BASE_PIOB->PIO_PDSR & PB_00_BUTTON1)
+    {
+       AT91C_BASE_PIOB->PIO_CODR = PB_13_LED_WHT;     
+    }    
+    else
+    {
+       AT91C_BASE_PIOB->PIO_SODR = PB_13_LED_WHT;      
+    }
+  
+    if(AT91C_BASE_PIOB->PIO_PDSR & PB_01_BUTTON2)
+    {
+       AT91C_BASE_PIOB->PIO_SODR = PB_18_LED_BLU;
+       AT91C_BASE_PIOB->PIO_CODR = PB_17_LED_YLW;
+    } 
+    else
+    {
+       AT91C_BASE_PIOB->PIO_SODR = PB_17_LED_YLW;
+       AT91C_BASE_PIOB->PIO_CODR = PB_18_LED_BLU;
+    }
+    
+    if(AT91C_BASE_PIOB->PIO_PDSR & PB_02_BUTTON3)
+    {
+       AT91C_BASE_PIOB->PIO_CODR = PB_15_LED_ORG; 
+    }
+    else
+    {
+        AT91C_BASE_PIOB->PIO_SODR = PB_15_LED_ORG;
+
+        if(u8BuzzerFrequency++ == 2)
+        {
+            u8BuzzerFrequency = 0;
+           
+            bBuzzerOn = !bBuzzerOn;
+            
+            if(bBuzzerOn)
+            {
+                AT91C_BASE_PIOA->PIO_SODR = PA_28_BUZZER1;
+            }  
+            else
+            {
+                AT91C_BASE_PIOA->PIO_CODR = PA_28_BUZZER1;
+            }    
+        }     
     }    
 } /* end UserApp1SM_Idle() */
     
@@ -152,8 +203,6 @@ static void UserApp1SM_Error(void)
 {
   
 } /* end UserApp1SM_Error() */
-
-
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* End of File                                                                                                        */

@@ -84,7 +84,6 @@ void main(void)
   while(1)
   {
     WATCHDOG_BONE();
-    
     /* Drivers */
     LedUpdate();
     ButtonRunActiveState();
